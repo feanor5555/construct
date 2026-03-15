@@ -25,6 +25,10 @@ class ModuleOnboarding(Document):
 		title: DF.Data
 	# end: auto-generated types
 
+	@staticmethod
+	def prepare_for_import(doc):
+		doc["title"] = _(doc.get("title"))
+
 	def on_update(self):
 		if frappe.conf.developer_mode:
 			export_to_files(record_list=[["Module Onboarding", self.name]], record_module=self.module)

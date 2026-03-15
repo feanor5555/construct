@@ -45,6 +45,14 @@ class OnboardingStep(Document):
 		video_url: DF.Data | None
 	# end: auto-generated types
 
+	@staticmethod
+	def prepare_for_import(doc):
+		doc["title"] = _(doc.get("title"))
+		doc["description"] = _(doc.get("description"))
+		doc["action_label"] = _(doc.get("action_label"))
+		doc["callback_title"] = _(doc.get("callback_title"))
+		doc["callback_message"] = _(doc.get("callback_message"))
+
 	def before_export(self, doc):
 		doc.is_complete = 0
 		doc.is_skipped = 0
@@ -56,6 +64,9 @@ def get_onboarding_steps(ob_steps):
 	for s in json.loads(ob_steps):
 		doc = frappe.get_doc("Onboarding Step", s.get("step"))
 		step = doc.as_dict().copy()
+		step.title = _(doc.title)
+		step.description = _(doc.description)
+		step.action_label = _(doc.action_label)
 		step.label = _(doc.title)
 		if step.action == "Create Entry":
 			step.is_submittable = frappe.db.get_value(

@@ -434,6 +434,7 @@ frappe.setup.slides_settings = [
 		},
 
 		initialize_fields: function (slide) {
+			console.log('>>> [FINAL FIX] initialize_fields called');
 			const setup_fields = function (slide) {
 				frappe.setup.utils.setup_region_fields(slide);
 				frappe.setup.utils.setup_language_field(slide);
@@ -444,20 +445,22 @@ frappe.setup.slides_settings = [
 			} else {
 				frappe.setup.utils.load_regional_data(slide, setup_fields);
 			}
-			if (!slide.get_value("language")) {
-				let session_language =
-					frappe.setup.utils.get_language_name_from_code(
-						frappe.boot.lang || navigator.language
-					) || "English";
-				let language_field = slide.get_field("language");
-
-				language_field.set_input(session_language);
-				if (!frappe.setup._from_load_messages) {
-					language_field.$input.trigger("change");
-				}
-				delete frappe.setup._from_load_messages;
-				moment.locale("en");
+			
+			let session_language =
+				frappe.wizard.values.language ||
+				frappe.setup.utils.get_language_name_from_code(
+					frappe.boot.lang || navigator.language
+				) || "English";
+			
+			let language_field = slide.get_field("language");
+			language_field.set_input(session_language);
+			
+			if (!frappe.setup._from_load_messages) {
+				language_field.$input.trigger("change");
 			}
+			delete frappe.setup._from_load_messages;
+			moment.locale("en");
+			
 			frappe.setup.utils.bind_region_events(slide);
 			frappe.setup.utils.bind_language_events(slide);
 		},
@@ -536,10 +539,10 @@ frappe.setup.utils = {
 			])
 			.then((r) => {
 				if (r.message) {
-					frappe.wizard.values.currency = r.message.currency;
-					frappe.wizard.values.country = r.message.country;
-					frappe.wizard.values.timezone = r.message.time_zone;
-					frappe.wizard.values.language = r.message.language;
+					frappe.wizard.values.currency = frappe.wizard.values.currency || r.message.currency;
+					frappe.wizard.values.country = frappe.wizard.values.country || r.message.country;
+					frappe.wizard.values.timezone = frappe.wizard.values.timezone || r.message.time_zone;
+					frappe.wizard.values.language = frappe.wizard.values.language || r.message.language;
 
 					frappe.db.get_value(
 						"User",
@@ -581,8 +584,11 @@ frappe.setup.utils = {
 
 	setup_language_field: function (slide) {
 		var language_field = slide.get_field("language");
+		let existing_val = frappe.wizard.values.language || slide.get_value("language") || "English";
+		console.log('>>> [FINAL FIX] setup_language_field, setting to:', existing_val);
 		language_field.df.options = frappe.setup.data.lang.languages;
 		language_field.set_options();
+		language_field.set_input(existing_val);
 	},
 
 	setup_region_fields: function (slide) {
@@ -625,16 +631,30 @@ frappe.setup.utils = {
 		if (country) {
 			country_field.set_input(country);
 			$(country_field.input).change();
+			if (frappe.wizard.values.timezone) {
+				slide.get_field("timezone").set_input(frappe.wizard.values.timezone);
+			}
+			if (frappe.wizard.values.currency) {
+				setTimeout(() => {
+					slide.get_field("currency").set_input(frappe.wizard.values.currency);
+				}, 100);
+			}
 		}
 	},
 
 	bind_language_events: function (slide) {
+		console.log('>>> [FIX] bind_language_events attached');
 		slide
 			.get_input("language")
 			.unbind("change")
 			.on("change", function () {
 				const selected_language = $(this).val();
-				if (slide.get_field("language").value === selected_language) return;
+				console.log('>>> [FIX] Language changed to:', selected_language);
+				frappe.wizard.values.language = selected_language; // FIX: Ensure it is saved
+				if (slide.get_field("language").value === selected_language) {
+					console.log('>>> [FIX] Language is already', selected_language, ', returning.');
+					return;
+				}
 
 				clearTimeout(slide.language_call_timeout);
 				slide.language_call_timeout = setTimeout(() => {

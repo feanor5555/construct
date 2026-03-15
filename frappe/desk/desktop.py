@@ -702,7 +702,11 @@ def get_onboarding_data(module: str):
 		steps = frappe.get_all("Onboarding Step", filters={"name": step}, order_by="idx", fields=["*"])
 
 		if steps:
-			item["items"].append(steps[0])
+			step_doc = steps[0]
+			step_doc["title"] = _(step_doc.title)
+			step_doc["description"] = _(step_doc.description)
+			step_doc["action_label"] = _(step_doc.action_label)
+			item["items"].append(step_doc)
 
 	onboardings.append(item)
 

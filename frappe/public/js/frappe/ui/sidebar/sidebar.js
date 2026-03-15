@@ -217,7 +217,7 @@ frappe.ui.Sidebar = class Sidebar {
 						let onboarding_data = data.message[0];
 						me.onboarding_widget = {};
 						me.onboarding_widget[module_name] = new frappe.ui.UserOnboarding({
-							title: onboarding_data.title,
+							title: __(onboarding_data.title),
 							steps: onboarding_data.items,
 							wrapper: me.$onboarding,
 							header_icon: me.sidebar_header.header_icon,
